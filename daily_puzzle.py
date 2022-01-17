@@ -119,11 +119,9 @@ class Board(defaultdict):
         return board
 
     def __init_board(self):
-        for r in range(2):
-            for c in range(6):
+        for r, c in [(r, c) for r in range(2) for c in range(6)]:
                 self[(r, c)] = self.Key.OPEN
-        for r in range(2, 7):
-            for c in range(7):
+        for r, c in [(r, c) for r in range(2, 7) for c in range(7)]:
                 self[(r, c)] = self.Key.OPEN
         for c in range(4, 7):
             self[(7, c)] = self.Key.OPEN
