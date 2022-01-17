@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import sqlite3
-import sys
 import time
+from argparse import ArgumentParser
 from datetime import date
 
 class Board(list):
@@ -70,18 +70,19 @@ class Board(list):
          ((0,0), (1,0), (1,1), (2,1))), # 90
     )
 
-    def __init__(self, today):
+    def __init__(self, today, replace):
         self.COORDS = [(r, c) for r in range(self.ROWS) for c in range(self.COLS)]
 
         for r in range(self.ROWS):
             self.append([' '] * self.COLS)
         self.__init_board()
         self.__set_date(today)
+        self._replace = replace
 
         self.__db_init()
 
     def get(self):
-        if self.__db_get():
+        if not self._replace and self.__db_get():
             return str(self)
 
         self.__solve()
@@ -186,15 +187,19 @@ class Board(list):
 
         return True, coords
 
-if len(sys.argv) > 1:
-    today = date.fromisoformat(sys.argv[1])
-else:
-    today = date.today()
+parser = ArgumentParser()
+parser.add_argument('-r', '--replace', help='replace the entry in the database (if exists)', action='store_true')
+parser.add_argument('today', help='the day the puzzle should be solved for', nargs='?', default=date.today())
+
+args = parser.parse_args()
+today = args.today
+if isinstance(today, str):
+    today = date.fromisoformat(today)
 
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 print(f'{today} {WEEKDAYS[today.weekday()]}')
 
-board = Board(today)
+board = Board(today, args.replace)
 tic = time.perf_counter()
 print(board.get())
 toc = time.perf_counter()
