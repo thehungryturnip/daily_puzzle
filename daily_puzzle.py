@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import time
 from datetime import date
 
 class Board(list):
@@ -167,5 +168,8 @@ WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 print(f'{today} {WEEKDAYS[today.weekday()]}')
 
 board = Board(today)
+tic = time.perf_counter()
 board.solve()
+toc = time.perf_counter()
 print(board)
+print(f'{toc - tic:0.3f}s')
