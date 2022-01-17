@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sqlite3
 import sys
 import time
 from datetime import date
@@ -8,6 +9,7 @@ class Board(list):
     ROWS = 8
     COLS = 7
     OPEN = '-'
+    DB_NAME = 'daily_puzzle.db'
 
     PIECES = (
         # 000
@@ -90,12 +92,24 @@ class Board(list):
 
     def __init__(self, today):
         self.COORDS = [(r, c) for r in range(self.ROWS) for c in range(self.COLS)]
+
         for r in range(self.ROWS):
             self.append([' '] * self.COLS)
         self.__init_board()
         self.__set_date(today)
 
-    def solve(self, working_on = 0):
+        self.__db_init()
+
+    def get(self):
+        if self.__db_get():
+            return str(self)
+
+        self.__solve()
+
+        self.__db_put()
+        return str(self)
+
+    def __solve(self, working_on = 0):
         if working_on == len(self.PIECES):
             return True
 
@@ -107,7 +121,7 @@ class Board(list):
                     for pr, pc in coords:
                         self[pr][pc] = str(working_on)
 
-                    if self.solve(working_on + 1):
+                    if self.__solve(working_on + 1):
                         return True
 
                     for pr, pc in coords:
@@ -127,6 +141,8 @@ class Board(list):
             self[7][c] = self.OPEN
 
     def __set_date(self, today):
+        self._db_id = f'{today.month}:{today.day}:{today.weekday()}'
+
         # m is 0-based
         m = today.month - 1
         self[m // 6][m % 6] = 'M'
@@ -140,6 +156,36 @@ class Board(list):
             self[6][3] = 'W'
         else:
             self[w // 3 + 6][w % 3 + 4] = 'W'
+
+    def __db_init(self):
+        self._db = sqlite3.connect(self.DB_NAME)
+        with self._db as db:
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS solutions (
+                    id STRING NOT NULL PRIMARY KEY,
+                    solution STRING
+                );""")
+
+    def __db_put(self):
+        query = 'INSERT INTO solutions (id, solution) values(?, ?)'
+        params = (self._db_id, '\n'.join([''.join(r) for r in self]))
+        with self._db as db:
+            db.execute(query, params)
+
+    def __db_get(self):
+        query = 'SELECT * FROM solutions WHERE id = :id'
+        params = {'id': self._db_id}
+        with self._db as db:
+            entries = db.execute(query, params).fetchall()
+
+            if not entries:
+                return False
+
+            solution = entries[0][1]
+            solution = solution.split('\n')
+            for r, c in self.COORDS:
+                self[r][c] = solution[r][c]
+            return True
 
     def __can_place_at(self, permutation, board_r, board_c):
         coords = []
@@ -169,7 +215,6 @@ print(f'{today} {WEEKDAYS[today.weekday()]}')
 
 board = Board(today)
 tic = time.perf_counter()
-board.solve()
+print(board.get())
 toc = time.perf_counter()
-print(board)
 print(f'{toc - tic:0.3f}s')
