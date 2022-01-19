@@ -2,7 +2,7 @@ name: daily_solve
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 5 * * *'
     
   workflow_dispatch:
 
@@ -12,8 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Solve today's puzzle
-        run: ./daily_puzzle.py
+        run: ./daily_puzzle.py -a
       - uses: EndBug/add-and-commit@v7
         with:
           message: "Solve daily puzzle"
-          add: 'daily_puzzle.db'
+          add: "['daily_puzzle.db', 'solutions.txt']"
