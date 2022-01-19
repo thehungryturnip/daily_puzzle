@@ -70,7 +70,7 @@ class Board(list):
          ((0,0), (1,0), (1,1), (2,1))), # 90
     )
 
-    def __init__(self, today, replace, verbose):
+    def __init__(self, today, replace, delete, verbose):
         self.COORDS = [(r, c) for r in range(self.ROWS) for c in range(self.COLS)]
 
         for r in range(self.ROWS):
@@ -79,10 +79,15 @@ class Board(list):
         self.__set_date(today)
         self._replace = replace
         self._verbose = verbose
+        self._delete = delete
 
         self.__db_init()
 
-    def get(self):
+    def do(self):
+        if self._delete:
+            self.__db_delete()
+            return None
+
         if not self._replace and self.__db_get():
             return str(self)
 
@@ -92,7 +97,7 @@ class Board(list):
         return str(self)
 
     def __solve(self, working_on = 0):
-        if (self._verbose):
+        if self._verbose:
             print(self)
         if working_on == len(self.PIECES):
             return True
@@ -171,6 +176,12 @@ class Board(list):
                 self[r][c] = solution[r][c]
             return True
 
+    def __db_delete(self):
+        query = 'DELETE FROM solutions WHERE id = :id'
+        params = {'id': self._db_id}
+        with self._db as db:
+            db.execute(query, params)
+
     def __can_place_at(self, permutation, board_r, board_c):
         coords = []
         for dr, dc in permutation:
@@ -190,6 +201,7 @@ class Board(list):
         return True, coords
 
 parser = ArgumentParser()
+parser.add_argument('-d', '--delete', help='deletes database entry for spceific date', action='store_true')
 parser.add_argument('-r', '--replace', help='replace the entry in the database (if exists)', action='store_true')
 parser.add_argument('-v', '--verbose', help='verbose mode (prints progress)', action='store_true')
 parser.add_argument('today', help='the day the puzzle should be solved for', nargs='?', default=date.today())
@@ -202,8 +214,8 @@ if isinstance(today, str):
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 print(f'{today} {WEEKDAYS[today.weekday()]}')
 
-board = Board(today, args.replace, args.verbose)
+board = Board(today, args.replace, args.delete, args.verbose)
 tic = time.perf_counter()
-print(board.get())
+print(board.do())
 toc = time.perf_counter()
 print(f'{toc - tic:0.3f}s')
