@@ -16,4 +16,4 @@ jobs:
       - uses: EndBug/add-and-commit@v7
         with:
           message: "Solve daily puzzle"
-          add: "['daily_puzzle.db', 'solutions.txt']"
+          add: "-A"
