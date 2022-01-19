@@ -11,9 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Set current date
+        run: echo "TODAY=output-$(date +%Y-%m-%d)" >> $GITHUB_ENV
       - name: Solve today's puzzle
         run: ./daily_puzzle.py
       - uses: EndBug/add-and-commit@v7
         with:
-          message: "Solve daily puzzle for $(date +%Y-%m-%d)"
+          message: "Solve daily puzzle for ${{ env.TODAY }}"
           add: 'daily_puzzle.db'
