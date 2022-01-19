@@ -10,6 +10,7 @@ class Board(list):
     COLS = 7
     OPEN = '-'
     DB_NAME = 'daily_puzzle.db'
+    TXT_NAME = 'solutions.txt'
 
     PIECES = (
         # 000
@@ -70,34 +71,30 @@ class Board(list):
          ((0,0), (1,0), (1,1), (2,1))), # 90
     )
 
-    def __init__(self, today, replace, delete, verbose):
-        self.COORDS = [(r, c) for r in range(self.ROWS) for c in range(self.COLS)]
+    def __init__(self, args):
+        self._args = args
 
-        for r in range(self.ROWS):
-            self.append([' '] * self.COLS)
-        self.__init_board()
-        self.__set_date(today)
-        self._replace = replace
-        self._verbose = verbose
-        self._delete = delete
+        self.COORDS = [(r, c) for r in range(self.ROWS) for c in range(self.COLS)]
+        self.__init_board(args.today)
 
         self.__db_init()
 
     def do(self):
-        if self._delete:
+        if self._args.delete:
             self.__db_delete()
-            return None
+            return 'DELETED'
 
-        if not self._replace and self.__db_get():
-            return str(self)
+        if self._args.replace or not self.__db_get():
+            self.__solve()
+            self.__db_put()
+        
+        if self._args.append:
+            self.__txt_append()
 
-        self.__solve()
-
-        self.__db_put()
         return str(self)
 
     def __solve(self, working_on = 0):
-        if self._verbose:
+        if self._args.verbose:
             print(self)
         if working_on == len(self.PIECES):
             return True
@@ -121,13 +118,18 @@ class Board(list):
     def __repr__(self):
         return '\n'.join([' '.join(r) for r in self])
 
-    def __init_board(self):
+    def __init_board(self, today):
+        for r in range(self.ROWS):
+            self.append([' '] * self.COLS)
+
         for r, c in [(r, c) for r in range(2) for c in range(6)]:
             self[r][c] = self.OPEN
         for r, c in [(r, c) for r in range(2, 7) for c in range(7)]:
             self[r][c] = self.OPEN
         for c in range(4, 7):
             self[7][c] = self.OPEN
+
+        self.__set_date(today)
 
     def __set_date(self, today):
         self._db_id = f'{today.month}:{today.day}:{today.weekday()}'
@@ -182,6 +184,10 @@ class Board(list):
         with self._db as db:
             db.execute(query, params)
 
+    def __txt_append(self):
+        with open(self.TXT_NAME, 'a') as f:
+            f.write(f'\n{self._args.today}\n{self}\n')
+
     def __can_place_at(self, permutation, board_r, board_c):
         coords = []
         for dr, dc in permutation:
@@ -201,20 +207,22 @@ class Board(list):
         return True, coords
 
 parser = ArgumentParser()
+parser.add_argument('today', help='the day the puzzle should be solved for', nargs='?', default=date.today())
+parser.add_argument('-v', '--verbose', help='verbose mode (prints progress)', action='store_true')
+
 parser.add_argument('-d', '--delete', help='deletes database entry for spceific date', action='store_true')
 parser.add_argument('-r', '--replace', help='replace the entry in the database (if exists)', action='store_true')
-parser.add_argument('-v', '--verbose', help='verbose mode (prints progress)', action='store_true')
-parser.add_argument('today', help='the day the puzzle should be solved for', nargs='?', default=date.today())
+
+parser.add_argument('-a', '--append', help='appends result to text file', action='store_true')
 
 args = parser.parse_args()
-today = args.today
-if isinstance(today, str):
-    today = date.fromisoformat(today)
+if isinstance(args.today, str):
+    args.today = date.fromisoformat(args.today)
 
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
-print(f'{today} {WEEKDAYS[today.weekday()]}')
+print(f'{args.today} {WEEKDAYS[args.today.weekday()]}')
 
-board = Board(today, args.replace, args.delete, args.verbose)
+board = Board(args)
 tic = time.perf_counter()
 print(board.do())
 toc = time.perf_counter()
