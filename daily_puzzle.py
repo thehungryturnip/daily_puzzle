@@ -10,7 +10,7 @@ class Board(list):
     COLS = 7
     OPEN = '-'
     DB_NAME = 'daily_puzzle.db'
-    TXT_NAME = 'solutions.txt'
+    MD_NAME = 'solutions.md'
 
     PIECES = (
         # 000
@@ -89,7 +89,7 @@ class Board(list):
             self.__db_put()
         
         if self._args.append:
-            self.__txt_append()
+            self.__md_append()
 
         return str(self)
 
@@ -184,9 +184,9 @@ class Board(list):
         with self._db as db:
             db.execute(query, params)
 
-    def __txt_append(self):
-        with open(self.TXT_NAME, 'a') as f:
-            f.write(f'\n{self._args.today}\n{self}\n')
+    def __md_append(self):
+        with open(self.MD_NAME, 'a') as f:
+            f.write(f'\n# {self._args.today}\n```\n{self}\n```\n')
 
     def __can_place_at(self, permutation, board_r, board_c):
         coords = []
