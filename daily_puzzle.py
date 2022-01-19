@@ -70,7 +70,7 @@ class Board(list):
          ((0,0), (1,0), (1,1), (2,1))), # 90
     )
 
-    def __init__(self, today, replace):
+    def __init__(self, today, replace, verbose):
         self.COORDS = [(r, c) for r in range(self.ROWS) for c in range(self.COLS)]
 
         for r in range(self.ROWS):
@@ -78,6 +78,7 @@ class Board(list):
         self.__init_board()
         self.__set_date(today)
         self._replace = replace
+        self._verbose = verbose
 
         self.__db_init()
 
@@ -91,7 +92,8 @@ class Board(list):
         return str(self)
 
     def __solve(self, working_on = 0):
-        print(self)
+        if (self._verbose):
+            print(self)
         if working_on == len(self.PIECES):
             return True
 
@@ -189,6 +191,7 @@ class Board(list):
 
 parser = ArgumentParser()
 parser.add_argument('-r', '--replace', help='replace the entry in the database (if exists)', action='store_true')
+parser.add_argument('-v', '--verbose', help='verbose mode (prints progress)', action='store_true')
 parser.add_argument('today', help='the day the puzzle should be solved for', nargs='?', default=date.today())
 
 args = parser.parse_args()
@@ -199,7 +202,7 @@ if isinstance(today, str):
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 print(f'{today} {WEEKDAYS[today.weekday()]}')
 
-board = Board(today, args.replace)
+board = Board(today, args.replace, args.verbose)
 tic = time.perf_counter()
 print(board.get())
 toc = time.perf_counter()
