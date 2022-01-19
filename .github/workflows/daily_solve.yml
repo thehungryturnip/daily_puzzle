@@ -15,5 +15,5 @@ jobs:
         run: ./daily_puzzle.py
       - uses: EndBug/add-and-commit@v7
         with:
-          message: 'Solve daily puzzle for $(date +%Y-%m-%d)'
+          message: "Solve daily puzzle for $(date +%Y-%m-%d)"
           add: 'daily_puzzle.db'
