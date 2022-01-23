@@ -5,6 +5,8 @@ import time
 from argparse import ArgumentParser
 from datetime import date
 
+WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
+
 class Board(list):
     ROWS = 8
     COLS = 7
@@ -186,7 +188,7 @@ class Board(list):
 
     def __md_append(self):
         with open(self.MD_NAME, 'a') as f:
-            f.write(f'\n# {self._args.today}\n```\n{self}\n```\n')
+            f.write(f'\n# {self._args.today} {WEEKDAYS[self._args.today.weekday()]}\n```\n{self}\n```\n')
 
     def __can_place_at(self, permutation, board_r, board_c):
         coords = []
@@ -219,7 +221,6 @@ args = parser.parse_args()
 if isinstance(args.today, str):
     args.today = date.fromisoformat(args.today)
 
-WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 print(f'{args.today} {WEEKDAYS[args.today.weekday()]}')
 
 board = Board(args)
